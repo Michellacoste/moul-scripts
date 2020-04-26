@@ -131,7 +131,6 @@ boolCleftSolved = 0
 kWriteTimestamps = 8
 BahroPoles = xEnum.Enum("Teledahn = 1, Garrison, Garden, Kadish")
 HidingPoles = 0
-IsVisitorPlayer = true  #whether or not the player is a visitor
 
 # Bahro pole SDL variable states
 #   0: Initial state, no pole, hydrant up, sheath up, clicking hand changes to state 1
@@ -194,15 +193,12 @@ class psnlBahroPoles(ptModifier):
         #global GotCleftBook
         global boolCleftSolved
         global HidingPoles
-        global IsVisitorPlayer
 
-        #Init visitor support
-        IsVisitorPlayer = not PtIsSubscriptionActive()
 
         PtDebugPrint("DEBUG: psnlBahroPoles.OnServerInitComplete():\tEverything ok so far")
 
         ageVault = ptAgeVault()
-        if type(ageVault) != type(None): #is the Vault online?
+        if ageVault is not None: #is the Vault online?
             ageSDL = ageVault.getAgeSDL()
             if ageSDL:
                 try:
@@ -242,7 +238,7 @@ class psnlBahroPoles(ptModifier):
             vault = ptVault()
             if ptVault().amOwnerOfCurrentAge():
                 entry = vault.findChronicleEntry("CleftSolved")
-                if type(entry) != type(None):
+                if entry is not None:
                     if entry.chronicleGetValue() == "yes":
                         boolCleftSolved = 1
                         ageSDL["psnlCleftSolved"] = (1,)
@@ -690,7 +686,7 @@ class psnlBahroPoles(ptModifier):
             #ageSDL = PtGetAgeSDL()
             ageSDL = xPsnlVaultSDL(1)
 
-            if type(ageSDL) != type(None):
+            if ageSDL is not None:
                 sdllist = ageSDL.BatchGet( ["TeledahnPoleState", "GardenPoleState", "GarrisonPoleState", "KadishPoleState"] )
                 self.Poles["Teledahn"]["State"] = sdllist["TeledahnPoleState"]
                 self.Poles["Garden"]["State"] = sdllist["GardenPoleState"]
@@ -727,19 +723,18 @@ class psnlBahroPoles(ptModifier):
         
         vault = ptVault()
 
-        if type(vault) != type(None):
-            chron = vault.findChronicleEntry("JourneyClothProgress")
+        chron = vault.findChronicleEntry("JourneyClothProgress")
 
-            if type(chron) != type(None):
-                ageChronRefList = chron.getChildNodeRefList()
+        if chron is not None:
+            ageChronRefList = chron.getChildNodeRefList()
 
-                for ageChron in ageChronRefList:
-                    ageChild = ageChron.getChild()
+            for ageChron in ageChronRefList:
+                ageChild = ageChron.getChild()
 
-                    ageChild = ageChild.upcastToChronicleNode()
+                ageChild = ageChild.upcastToChronicleNode()
 
-                    if ageChild.chronicleGetName() == age:
-                        return len(ageChild.chronicleGetValue() )
+                if ageChild.chronicleGetName() == age:
+                    return len(ageChild.chronicleGetValue() )
 
         return 0
 
@@ -819,7 +814,7 @@ class psnlBahroPoles(ptModifier):
         
         PtDebugPrint("Oneshot finished on age %s" % age)
 
-        if IsVisitorPlayer or not IamOwner:
+        if not IamOwner:
             return
 
         self.UpdatePoleStates()
@@ -907,12 +902,11 @@ class psnlBahroPoles(ptModifier):
     def SetJCProgressComplete(self):
         vault = ptVault()
 
-        if type(vault) != type(None):
-            chron = vault.findChronicleEntry("JourneyClothProgress")
+        chron = vault.findChronicleEntry("JourneyClothProgress")
 
-            if type(chron) != type(None):
-                chron.chronicleSetValue("Z")
-                chron.save()
+        if chron is not None:
+            chron.chronicleSetValue("Z")
+            chron.save()
 
         #sdl = xPsnlVaultSDL(1)
         #sdl["CleftVisited"] = (1,)
@@ -1110,7 +1104,7 @@ class psnlBahroPoles(ptModifier):
     def CheckBahroCaveSolution(self):
         vault = ptVault()
         entry = vault.findChronicleEntry("BahroCave")
-        if type(entry) == type(None):
+        if entry is None:
             return 0
         else:
             var = self.GetAgeVariable("Teledahn", "SolutionSymbol")
@@ -1133,7 +1127,7 @@ class psnlBahroPoles(ptModifier):
 
         vault = ptVault()
         entry = vault.findChronicleEntry("BahroCave")
-        if type(entry) == type(None):
+        if entry is None:
             #PtDebugPrint("DEBUG: psnlBahroPoles.OnServerInitComplete: Did not find BahroCave chronicle...creating")
             vault.addChronicleEntry("BahroCave",0,"0")
 

@@ -164,7 +164,7 @@ def PtAssert(cond, msg):
 def PtGetObjectName(obj):
     "Given a ptSceneobject, return its name"
     if isinstance(obj,ptSceneobject):
-        if type(obj.getKey()) != type(None):
+        if obj.getKey() is not None:
             return obj.getKey().getName()
     return "nil"
 
@@ -172,9 +172,6 @@ def PtGetObjectName(obj):
 # ...to a notify message
 def PtAddEvent(notify,event):
     "Add an event of any type to a ptNotify message object"
-    if type(event) != type([]):
-        print "Unrecognized event record structure"
-        return
     if event[0] == kCollisionEvent:
         notify.addCollisionEvent(event[1],event[2].getKey(),event[3].getKey())
     elif event[0] == kPickedEvent:
@@ -206,9 +203,8 @@ def PtAddEvent(notify,event):
 # add a list of events into a ptNotify message
 def PtAddEvents(notify, events):
     "Add a list of events to a ptNotify message object"
-    if type(events) == type([]):
-        for event in events:
-            PtAddEvent(notify,event)
+    for event in events:
+        PtAddEvent(notify,event)
 
 # find the avatar in event record list
 def PtFindAvatar(events):
@@ -390,7 +386,7 @@ class ptAttribSceneobjectList(ptAttributeList):
         if self.netForce:
             value.netForce(1)
         self.value.append(value)
-        if type(self.byObject) == type({}):
+        if isinstance(self.byObject, dict):
             name = value.getName()
             self.byObject[name] = value
 
@@ -406,12 +402,12 @@ class ptAttributeKeyList(ptAttributeList):
             self.byObject = None
     def enable(self,objectName=None):
         if self.value != None:
-            if type(objectName) != type(None) and type(self.byObject) != type(None):
+            if objectName is not None and self.byObject is not None:
                 pkey = self.byObject[objectName]
                 if self.netForce:
                     pkey.netForce(1)
                 pkey.enable()
-            elif type(self.value)==type([]):
+            elif isinstance(self.value, list):
                 for pkey in self.value:
                     if self.netForce:
                         pkey.netForce(1)
@@ -422,12 +418,12 @@ class ptAttributeKeyList(ptAttributeList):
                 self.value.enable()
     def disable(self,objectName=None):
         if self.value != None:
-            if type(objectName) != type(None) and type(self.byObject) != type(None):
+            if objectName is not None and self.byObject is not None:
                 pkey = self.byObject[objectName]
                 if self.netForce:
                     pkey.netForce(1)
                 pkey.disable()
-            elif type(self.value)==type([]):
+            elif isinstance(self.value, list):
                 for pkey in self.value:
                     if self.netForce:
                         pkey.netForce(1)
@@ -440,7 +436,7 @@ class ptAttributeKeyList(ptAttributeList):
         if self.netForce:
             value.netForce(1)
         self.value.append(value)
-        if type(self.byObject) == type({}):
+        if isinstance(self.byObject, dict):
             name = value.getName()
             self.byObject[name] = value
 
@@ -457,6 +453,9 @@ class ptAttribActivator(ptAttributeKeyList):
     def volumeSensorIgnoreExtraEnters(self,state):
         for key in self.value:
             key.getSceneObject().volumeSensorIgnoreExtraEnters(state)
+    def volumeSensorNoArbitration(self, noArbitration=True):
+        for key in self.value:
+            key.getSceneObject().volumeSensorNoArbitration(noArbitration)
 
 # Activator attribute (pick activator types box)
 class ptAttribActivatorList(ptAttributeKeyList):
@@ -473,13 +472,13 @@ class ptAttribResponder(ptAttributeKeyList):
         return (self.id,self.name,9)
     def run(self,key,state=None,events=None,avatar=None,objectName=None,netForce=0,netPropagate=None,fastforward=0):
         # has the value been set?
-        if type(self.value) != type(None):
+        if self.value is not None:
             nt = ptNotify(key)
             nt.clearReceivers()
             # see if the value is a list or byObject or a single
-            if type(objectName) != type(None) and type(self.byObject) != type(None):
+            if objectName is not None and self.byObject is not None:
                 nt.addReceiver(self.byObject[objectName])
-            elif type(self.value)==type([]):
+            elif isinstance(self.value, list):
                 for resp in self.value:
                     nt.addReceiver(resp)
             else:
@@ -491,10 +490,10 @@ class ptAttribResponder(ptAttributeKeyList):
             if netForce or self.netForce:
                 nt.netForce(1)
             # see if the state is specified
-            if type(state) == type(0):
+            if isinstance(state, int):
                 raise ptResponderStateError,"Specifying state as a number is no longer supported"
-            elif type(state) == type(''):
-                if type(self.state_list) != type(None):
+            elif isinstance(state, str):
+                if self.state_list is not None:
                     try:
                         idx = self.state_list.index(state)
                         nt.addResponderState(idx)
@@ -503,9 +502,9 @@ class ptAttribResponder(ptAttributeKeyList):
                 else:
                     raise ptResponderStateError,"There is no state list provided"
             # see if there are events to pass on
-            if type(events) != type(None):
+            if events is not None:
                 PtAddEvents(nt,events)
-            if type(avatar) != type(None):
+            if avatar is not None:
                 nt.addCollisionEvent(1,avatar.getKey(),avatar.getKey())
             if fastforward:
                 nt.setType(PtNotificationType.kResponderFF)
@@ -516,13 +515,13 @@ class ptAttribResponder(ptAttributeKeyList):
             nt.send()
     def setState(self,key,state,objectName=None,netForce=0,netPropagate=None):
         # has the value been set?
-        if type(self.value) != type(None):
+        if self.value is not None:
             nt = ptNotify(key)
             nt.clearReceivers()
             # see if the value is a list or byObject or a single
-            if type(objectName) != type(None) and type(self.byObject) != type(None):
+            if objectName is not None and self.byObject is not None:
                 nt.addReceiver(self.byObject[objectName])
-            elif type(self.value)==type([]):
+            elif isinstance(self.value, list):
                 for resp in self.value:
                     nt.addReceiver(resp)
             else:
@@ -534,10 +533,10 @@ class ptAttribResponder(ptAttributeKeyList):
             if netForce or self.netForce:
                 nt.netForce(1)
             # see if the state is specified
-            if type(state) == type(0):
+            if isinstance(state, int):
                 raise ptResponderStateError,"Specifying state as a number is no longer supported"
-            elif type(state) == type(''):
-                if type(self.state_list) != type(None):
+            elif isinstance(state, str):
+                if self.state_list is not None:
                     try:
                         idx = self.state_list.index(state)
                         nt.addResponderState(idx)
@@ -551,8 +550,8 @@ class ptAttribResponder(ptAttributeKeyList):
             nt.send()
 
     def getState(self):
-        if (type(self.value) != type(None)):
-            if type(self.value)==type([]):
+        if (self.value is not None):
+            if isinstance(self.value, list):
                 for resp in self.value:
                     obj = resp.getSceneObject()
                     idx = obj.getResponderState()
@@ -624,20 +623,20 @@ class ptAttribExcludeRegion(ptAttribute):
     def getdef(self):
         return (self.id,self.name,13)
     def clear(self,sender):
-        if type(self.value) != type(None):
+        if self.value is not None:
             PtExcludeRegionSet(sender,self.value,kExRegClear)
     def release(self,sender):
-        if type(self.value) != type(None):
+        if self.value is not None:
             PtExcludeRegionSet(sender,self.value,kExRegRelease)
     def enable(self):
         self.sceneobject.physics.enable()
     def disable(self):
         self.sceneobject.physics.disable()
     def clearNow(self,sender):
-        if type(self.value) != type(None):
+        if self.value is not None:
             PtExcludeRegionSetNow(sender,self.value,kExRegClear)
     def releaseNow(self,sender):
-        if type(self.value) != type(None):
+        if self.value is not None:
             PtExcludeRegionSetNow(sender,self.value,kExRegRelease)
 
 class ptAttribWaveSet(ptAttribute):
@@ -716,7 +715,7 @@ class ptAttribAnimation(ptAttribute):
     # this is to set the value via method (only called if defined)
     def __setvalue__(self,value):
         # has a ptAnimation already been made
-        if type(value) == type(""):
+        if isinstance(value, str):
             self.animName = value
             try:
                 self.animation.setAnimName(value)
@@ -767,35 +766,35 @@ class ptAttribBehavior(ptAttribute):
         return (self.id,self.name,15)
     def run(self,avatar):
         "This will run the behavior on said avatar"
-        if type(self.value) != type(None):
+        if self.value is not None:
             if self.netForce:
                 self.value.netForce(1)
                 avatar.avatar.netForce(1)
             avatar.avatar.runBehavior(self.value,self.netForce,self.netProp)
     def nextStage(self,avatar,transitionTime=1.0,setTimeFlag=1,newTime=0.0,dirFlag=0,isForward=1):
         "This will go to the next stage in a multi-stage behavior"
-        if type(self.value) != type(None):
+        if self.value is not None:
             if self.netForce:
                 self.value.netForce(1)
                 avatar.avatar.netForce(1)
             avatar.avatar.nextStage(self.value,transitionTime,setTimeFlag,newTime,dirFlag,isForward,self.netForce)
     def previousStage(self,avatar,transitionTime=1.0,setTimeFlag=1,newTime=0.0,dirFlag=0,isForward=1):
         "This will go to the next stage in a multi-stage behavior"
-        if type(self.value) != type(None):
+        if self.value is not None:
             if self.netForce:
                 self.value.netForce(1)
                 avatar.avatar.netForce(1)
             avatar.avatar.previousStage(self.value,transitionTime,setTimeFlag,newTime,dirFlag,isForward,self.netForce)
     def gotoStage(self,avatar,stage,transitionTime=1.0,setTimeFlag=1,newTime=0.0,dirFlag=0,isForward=1):
         "This will go to the next stage in a multi-stage behavior"
-        if type(self.value) != type(None):
+        if self.value is not None:
             if self.netForce:
                 self.value.netForce(1)
                 avatar.avatar.netForce(1)
             avatar.avatar.gotoStage(self.value,stage,transitionTime,setTimeFlag,newTime,dirFlag,isForward,self.netForce)
     def setLoopCount(self,stage,loopCount):
         "This will set the loop count for a stage"
-        if type(self.value) != type(None):
+        if self.value is not None:
             PtSetBehaviorLoopCount(self.value,stage,loopCount,self.netForce)
 
 # Material texture attribute pick button
@@ -818,7 +817,7 @@ class ptAttribMaterialAnimation(ptAttribute):
         self.animation = None
 
     def __setvalue__(self, value):
-        if type(self.animation) == type(None):
+        if self.animation is None:
             self.animation = ptAnimation()
             self.animation.addKey(value)
             self.value = self.animation
@@ -846,7 +845,7 @@ class ptAttribMaterialList(ptAttributeList):
         if self.netForce:
             value.netForce(1)
         self.value.append(value)
-        if type(self.byObject) == type({}):
+        if isinstance(self.byObject, dict):
             name = value.getName()
             self.byObject[name] = value
 

@@ -243,6 +243,7 @@ class xKI(ptModifier):
         self.markerGameTimeID = 0
         self.markerJoinRequests = []
         self.MFdialogMode = kGames.MFOverview
+        self.MFScrollPos = 0
 
         # New Marker Game dialog globals.
         self.markerGameDefaultColor = ""
@@ -356,6 +357,7 @@ class xKI(ptModifier):
         PtLoadDialog("KIMiniMarkers", self.key)
 
         self.markerGameManager = xMarkerMgr.MarkerGameManager()
+        self.chatMgr.markerGameManager = self.markerGameManager
 
         # Pass the newly-initialized key to the modules.
         self.chatMgr.key = self.key
@@ -1121,6 +1123,23 @@ class xKI(ptModifier):
         elif ID == kTimers.JalakBtnDelay:
             self.SetJalakGUIButtons(1)
 
+        # Flash the scroll down arrow.
+        elif ID == kTimers.IncomingChatFlash:
+            if self.KILevel < kNormalKI:
+                mKIdialog = KIMicro.dialog
+            else:
+                mKIdialog = KIMini.dialog
+            if self.chatMgr.incomingChatFlashState > 0:
+                btn = ptGUIControlButton(mKIdialog.getControlFromTag(kGUI.miniChatScrollDown))
+                if self.chatMgr.incomingChatFlashState & 1:
+                    btn.hide()
+                else:
+                    btn.show()
+                self.chatMgr.incomingChatFlashState -= 1
+                PtAtTimeCallback(self.key, 0.15, kTimers.IncomingChatFlash)
+            else:
+                mKIdialog.refreshAllControls()
+
     ## Called by Plasma when a screen capture is done.
     # This gets called once the screen capture is performed and ready to be
     # processed by the KI.
@@ -1157,30 +1176,28 @@ class xKI(ptModifier):
         self.takingAPicture = False
 
         # Save the image to the filesystem.
-        if "saveAsPNG" in dir(image):
-            preferredExtension = "png"
-        else:
-            preferredExtension = "jpg"
-
         basePath = os.path.join(PtGetUserPath(), kImages.Directory)
         if not PtCreateDir(basePath):
             PtDebugPrint(u"xKI.OnScreenCaptureDone(): Unable to create \"{}\" directory. Image not saved to disk.".formatZ(basePath))
             return
 
-        imageList = glob.iglob(os.path.join(basePath, "{}[0-9][0-9][0-9][0-9].{}".format(kImages.FileNameTemplate, preferredExtension)))
+        imageList = glob.iglob(os.path.join(basePath, "{}[0-9][0-9][0-9][0-9].png".format(kImages.FileNameTemplate)))
         imageNumbers = [int(os.path.basename(img)[7:-4]) for img in imageList] + [0]
         missingNumbers = set(range(1, max(imageNumbers))).difference(set(imageNumbers))
         if len(missingNumbers) > 0:
             firstMissing = min(missingNumbers)
         else:
             firstMissing = max(imageNumbers) + 1
-        tryName = os.path.join(basePath, U"{}{:04d}.{}".format(kImages.FileNameTemplate, firstMissing, preferredExtension))
+        tryName = os.path.join(basePath, U"{}{:04d}.png".format(kImages.FileNameTemplate, firstMissing))
 
         PtDebugPrint(u"xKI.OnScreenCaptureDone(): Saving image to \"{}\".".format(tryName), level=kWarningLevel)
-        if "saveAsPNG" in dir(image):
-            image.saveAsPNG(tryName)
-        else:
-            image.saveAsJPEG(tryName, 90)
+        gpsLocation = "{} {} {}".format(self.dniCoords.getTorans(), self.dniCoords.getHSpans(), self.dniCoords.getVSpans())
+        metadata = {
+            "Explorer" : PtGetLocalPlayer().getPlayerName(),
+            "Location" : gpsLocation,
+            "Age Name" : xKIHelpers.GetAgeName()
+            }
+        image.saveAsPNG(tryName, metadata)
 
     ## Called by Plasma when the player list has been updated.
     # This makes sure that everything is updated and refreshed.
@@ -2047,6 +2064,7 @@ class xKI(ptModifier):
             MGmgr.hideMarkersLocal()
 
         # Refresh the content.
+        self.MFScrollPos = 0
         self.RefreshPlayerList()
         self.BigKICheckContentRefresh(self.BKCurrentContent)
 
@@ -2336,50 +2354,46 @@ class xKI(ptModifier):
 
         pageDefs = ""
         vault = ptVault()
-        if vault is not None:
-            psnlSDL = vault.getPsnlAgeSDL()
-            if psnlSDL:
-                for SDLVar, page in xLinkingBookDefs.xYeeshaPages:
-                    FoundValue = psnlSDL.findVar(SDLVar)
-                    if FoundValue is not None:
-                        PtDebugPrint(u"xKI.GetYeeshaPageDefs(): The previous value of the SDL variable \"{}\" is {}.".format(SDLVar, FoundValue.getInt()), level=kDebugDumpLevel)
-                        state = FoundValue.getInt() % 10
-                        if state != 0:
-                            active = 1
-                            if state == 2 or state == 3:
-                                active = 0
-                            try:
-                                pageDefs += page % (active)
-                            except LookupError:
-                                pageDefs += "<pb><pb>Bogus page {}".format(SDLVar)
-            else:
-                PtDebugPrint(u"xKI.GetYeeshaPageDefs(): Trying to access the Chronicle psnlSDL failed: psnlSDL = \"{}\".".format(psnlSDL), level=kErrorLevel)
+        psnlSDL = vault.getPsnlAgeSDL()
+        if psnlSDL:
+            for SDLVar, page in xLinkingBookDefs.xYeeshaPages:
+                FoundValue = psnlSDL.findVar(SDLVar)
+                if FoundValue is not None:
+                    PtDebugPrint(u"xKI.GetYeeshaPageDefs(): The previous value of the SDL variable \"{}\" is {}.".format(SDLVar, FoundValue.getInt()), level=kDebugDumpLevel)
+                    state = FoundValue.getInt() % 10
+                    if state != 0:
+                        active = 1
+                        if state == 2 or state == 3:
+                            active = 0
+                        try:
+                            pageDefs += page % (active)
+                        except LookupError:
+                            pageDefs += "<pb><pb>Bogus page {}".format(SDLVar)
         else:
-            PtDebugPrint(u"xKI.GetYeeshaPageDefs(): Trying to access the Vault failed, can't access YeeshaPageChanges Chronicle.", level=kErrorLevel)
+            PtDebugPrint(u"xKI.GetYeeshaPageDefs(): Trying to access the Chronicle psnlSDL failed: psnlSDL = \"{}\".".format(psnlSDL), level=kErrorLevel)
         return pageDefs
 
     ## Turns on and off the Yeesha pages' SDL values.
     def ToggleYeeshaPageSDL(self, varName, on):
         vault = ptVault()
-        if vault is not None:
-            psnlSDL = vault.getPsnlAgeSDL()
-            if psnlSDL:
-                ypageSDL = psnlSDL.findVar(varName)
-                if ypageSDL:
-                    size, state = divmod(ypageSDL.getInt(), 10)
-                    value = None
-                    if state == 1 and not on:
-                        value = 3
-                    elif state == 3 and on:
-                        value = 1
-                    elif state == 2 and on:
-                        value = 4
-                    elif state == 4 and not on:
-                        value = 2
-                    if value is not None:
-                        PtDebugPrint(u"xKI.ToggleYeeshaPageSDL(): Setting {} to {}.".format(varName, value), level=kDebugDumpLevel)
-                        ypageSDL.setInt((size * 10) + value)
-                        vault.updatePsnlAgeSDL(psnlSDL)
+        psnlSDL = vault.getPsnlAgeSDL()
+        if psnlSDL:
+            ypageSDL = psnlSDL.findVar(varName)
+            if ypageSDL:
+                size, state = divmod(ypageSDL.getInt(), 10)
+                value = None
+                if state == 1 and not on:
+                    value = 3
+                elif state == 3 and on:
+                    value = 1
+                elif state == 2 and on:
+                    value = 4
+                elif state == 4 and not on:
+                    value = 2
+                if value is not None:
+                    PtDebugPrint(u"xKI.ToggleYeeshaPageSDL(): Setting {} to {}.".format(varName, value), level=kDebugDumpLevel)
+                    ypageSDL.setInt((size * 10) + value)
+                    vault.updatePsnlAgeSDL(psnlSDL)
 
     #~~~~~~~~~~~#
     # Censoring #
@@ -4852,7 +4866,10 @@ class xKI(ptModifier):
         # Is the player merely looking at a Marker Game?
         if self.MFdialogMode == kGames.MFOverview:
             mrkfldTitleBtn.disable()
-            mbtnDelete.show()
+            if self.IsContentMutable(self.BKCurrentContent):
+                mbtnDelete.show()
+            else:
+                mbtnDelete.hide()
             mbtnGameTimePullD.hide()
             mbtnGameTimeArrow.hide()
             if element.getCreatorNodeID() == PtGetLocalClientID():
@@ -4868,6 +4885,7 @@ class xKI(ptModifier):
             mtbPlayEnd.setString(PtGetLocalizedString("KI.MarkerGame.PlayButton"))
             mtbPlayEnd.show()
             mlbMarkerList.hide()
+            self.BigKIMarkerListScrollVis(False)
             mlbMarkerTextTB.hide()
             mbtnToran.hide()
             mbtnHSpan.hide()
@@ -4896,6 +4914,7 @@ class xKI(ptModifier):
                 mlbMarkerList.show()
 
                 # Add the Markers to the list.
+                mlbMarkerList.lock()
                 for idx, age, pos, desc in mgr.markers:
                     coord = ptDniCoordinates()
                     coord.fromPoint(pos)
@@ -4903,6 +4922,11 @@ class xKI(ptModifier):
                     hSpans = coord.getHSpans()
                     vSpans = coord.getVSpans()
                     mlbMarkerList.addStringW(u"[{}:{},{},{}] {}".format(FilterAgeName(age), torans, hSpans, vSpans, xCensor.xCensor(desc, self.censorLevel)))
+                mlbMarkerList.unlock()
+
+                # Refresh the scroll position
+                self.BigKIMarkerListScrollVis(True)
+                mlbMarkerList.setScrollPos(self.MFScrollPos)
 
                 mlbMarkerTextTB.hide()
                 mbtnToran.hide()
@@ -4924,6 +4948,7 @@ class xKI(ptModifier):
                     mtbPlayEnd.setStringW(PtGetLocalizedString("KI.MarkerGame.RemoveMarkerButton"))
                     mtbPlayEnd.show()
                     mlbMarkerList.hide()
+                    self.BigKIMarkerListScrollVis(False)
                     mlbMarkerTextTB.show()
                     # don't censor here... we don't want censored stuff saved to the vault
                     mlbMarkerTextTB.setStringW(desc)
@@ -4982,6 +5007,7 @@ class xKI(ptModifier):
             mtbPlayEnd.show()
             mlbMarkerList.clearAllElements()
             mlbMarkerList.show()
+            self.BigKIMarkerListScrollVis(True)
 
             # Assume that the game is finished, unless an unseen Marker is still left.
             questGameFinished = True
@@ -5053,8 +5079,7 @@ class xKI(ptModifier):
         ptGUIControlTextBox(getControl(kGUI.MarkerFolderStatus)).hide()
         ptGUIControlTextBox(getControl(kGUI.MarkerFolderOwner)).hide()
         # Hide the scroll buttons for the Marker list; the scroll control will turn them back on.
-        ptGUIControlButton(getControl(kGUI.MarkerFolderMarkerListUpBtn)).hide()
-        ptGUIControlButton(getControl(kGUI.MarkerFolderMarkerListDownBtn)).hide()
+        self.BigKIMarkerListScrollVis(False)
 
         ptGUIControlButton(getControl(kGUI.MarkerFolderInvitePlayer)).hide()
         ptGUIControlButton(getControl(kGUI.MarkerFolderEditStartGame)).hide()
@@ -5088,6 +5113,14 @@ class xKI(ptModifier):
         mrkfldTitle.setStringW(msg)
         mrkfldTitle.show()
         mrkfldTitle.refresh()
+
+    def BigKIMarkerListScrollVis(self, visible=True):
+        if visible:
+            ptGUIControlButton(KIMarkerFolderExpanded.dialog.getControlFromTag(kGUI.MarkerFolderMarkerListUpBtn)).show()
+            ptGUIControlButton(KIMarkerFolderExpanded.dialog.getControlFromTag(kGUI.MarkerFolderMarkerListDownBtn)).show()
+        else:
+            ptGUIControlButton(KIMarkerFolderExpanded.dialog.getControlFromTag(kGUI.MarkerFolderMarkerListUpBtn)).hide()
+            ptGUIControlButton(KIMarkerFolderExpanded.dialog.getControlFromTag(kGUI.MarkerFolderMarkerListDownBtn)).hide()
 
     ## Show the selected configuration screen.
     def ShowSelectedConfig(self):
@@ -6472,6 +6505,11 @@ class xKI(ptModifier):
 
             elif mFldrID == kGUI.MarkerFolderMarkListbox:
                 mgr.LoadGame(self.BKCurrentContent)
+
+                # Save the current scroll position before transitioning to some other content
+                mfmlb = ptGUIControlListBox(KIMarkerFolderExpanded.dialog.getControlFromTag(kGUI.MarkerFolderMarkListbox))
+                self.MFScrollPos = mfmlb.getScrollPos()
+
                 if not mgr.playing:
                     # NOTE: We must use selected_marker_index because marker IDs don't necessarily
                     #       match up with the indices used in the GUI

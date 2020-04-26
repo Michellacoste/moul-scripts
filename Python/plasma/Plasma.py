@@ -159,10 +159,6 @@ def PtCreatePlayer(playerName, avatarShape, invitation):
     """Creates a new player"""
     pass
 
-def PtCreatePlayerW(playerName, avatarShape, invitation):
-    """Unicode version of PtCreatePlayer"""
-    pass
-
 def PtCreatePublicAge(ageInfo, cbObject=None):
     """Create a public instance of the given age.
 cbObject, if supplied should have a member called publicAgeCreated(self,ageInfo)"""
@@ -601,10 +597,6 @@ def PtIsSinglePlayerMode():
     """Returns whether the game is in single player mode or not"""
     pass
 
-def PtIsSubscriptionActive():
-    """Returns true if the current player is a paying subscriber"""
-    pass
-
 def PtKillParticles(timeRemaining,pctToKill,particleSystem):
     """Tells particleSystem to kill pctToKill percent of its particles"""
     pass
@@ -850,9 +842,6 @@ def PtUnloadDialog(dialogName):
     """This will unload the GUI dialog by name. If not loaded then nothing will happen"""
     pass
 
-def PtUpgradeVisitorToExplorer(playerInt):
-    """Upgrades the player to explorer status"""
-    pass
 
 def PtUsingUnicode():
     """Returns true if the current language is a unicode language (like Japanese)"""
@@ -6220,6 +6209,11 @@ its draw, physics, avatar, particle objects"""
         """Tells the volume sensor attached to this object to ignore extra enters (default), or not (hack for garrison)."""
         pass
 
+    def volumeSensorNoArbitration(self, noArbitration):
+        """Tells the volume sensor attached to this object whether or not to negotiate exclusive locks with the server."""
+        pass
+
+
 class ptSimpleStateVariable:
     """Basic SDL state data record class"""
     def __init__(self):
@@ -8311,6 +8305,10 @@ class ptVaultMarkerGameNode(ptVaultNode):
         """Returns the node ID of the owner of this node"""
         pass
 
+    def getReward(self):
+        """Returns a string representing the reward for completing this game"""
+        pass
+
     def getType(self):
         """Returns the type of ptVaultNode this is.
 See PlasmaVaultTypes.py"""
@@ -8370,6 +8368,10 @@ See PlasmaVaultTypes.py"""
 
     def setOwnerNodeID(self,id):
         """Set node ID of the owner of this node"""
+        pass
+
+    def setReward(self,reward):
+        """Sets the reward for completing this marker game"""
         pass
 
     def setType(self,type):

@@ -90,6 +90,20 @@ gPreviewStarted = 0
 prevAudioDeviceName = None
 
 # =====================================
+# Aspect Ratios
+#---------
+_ratios = (
+    ("5:4", 1.25, 1.27),
+    ("4:3", 1.28, 1.35),
+    ("3:2", 1.47, 1.54),
+    ("14:9", 1.55, 1.57),
+    ("16:10", 1.58, 1.61),
+    ("5:3", 1.65, 1.67),
+    ("16:9", 1.70, 1.79),
+    ("21:9", 2.34, 2.41),
+)
+
+# =====================================
 # Options Menu dialog globals
 #---------
 kOptionsKeyMapBtn = 299
@@ -486,15 +500,14 @@ class xOptionsMenu(ptModifier):
     def OnPageLoad(self,what,room):
         global gFirstReltoVisit
 
-        if (room == "Personal_psnlMYSTII" or room == "Personal_District_psnlMYSTII") and gFirstReltoVisit:
+        if room in {u"Personal_psnlMYSTII", u"Personal_District_psnlMYSTII"} and gFirstReltoVisit:
             gFirstReltoVisit = false
 
             vault = ptVault()
-            if type(vault) != type(None):
-                entry = vault.findChronicleEntry("KeyMap")
-                if type(entry) == type(None):
-                    # not found... create defaults
-                    self.ISetDefaultKeyMappings()
+            entry = vault.findChronicleEntry("KeyMap")
+            if entry is None:
+                # not found... create defaults
+                self.ISetDefaultKeyMappings()
 
             self.LoadAdvSettings()
             self.LoadKeyMap()
@@ -716,7 +729,7 @@ class xOptionsMenu(ptModifier):
                     # get the new keys and bind
                     km = ptKeyMap()
                     cCode,spFlag,mpFlag = gKM1ControlCodesRow1[kmID]
-                    if type(cCode) == type(""):
+                    if isinstance(cCode, str):
                         key1 = km.convertVKeyToChar(control.getLastKeyCaptured(),control.getLastModifiersCaptured())
                         km.bindKeyToConsoleCommand(key1,cCode)
                         KeyMapString = self.getChronicleVar("KeyMap")
@@ -725,7 +738,7 @@ class xOptionsMenu(ptModifier):
                         for key in KeyMapArray:
                             NewKeyMapString += key + " "
                         self.setNewChronicleVar("KeyMap", NewKeyMapString.rstrip())
-                    elif type(cCode) != type(None):
+                    elif cCode is not None:
                         otherID = kmID + 100
                         otherField = ptGUIControlEditBox(KeyMapDlg.dialog.getControlFromTag(otherID))
                         key1 = km.convertVKeyToChar(control.getLastKeyCaptured(),control.getLastModifiersCaptured())
@@ -751,7 +764,7 @@ class xOptionsMenu(ptModifier):
                     # get the new keys and bind
                     km = ptKeyMap()
                     cCode,spFlag,mpFlag = gKM1ControlCodesRow2[kmID]
-                    if type(cCode) == type(""):
+                    if isinstance(cCode, str):
                         # console command  - this shouldn't really happen!
                         key1 = km.convertVKeyToChar(control.getLastKeyCaptured(),control.getLastModifiersCaptured())
                         km.bindKeyToConsoleCommand(key1,cCode)
@@ -763,7 +776,7 @@ class xOptionsMenu(ptModifier):
                             NewKeyMapString += key + " "
                         self.setNewChronicleVar("KeyMap", NewKeyMapString.rstrip())
                         #xIniInput.SetConsoleKey('"'+cCode+'"',key1+',')
-                    elif type(cCode) != type(None):
+                    elif cCode is not None:
                         otherID = kmID - 100
                         otherField = ptGUIControlEditBox(KeyMapDlg.dialog.getControlFromTag(otherID))
                         key2 = km.convertVKeyToChar(control.getLastKeyCaptured(),control.getLastModifiersCaptured())
@@ -1377,7 +1390,7 @@ class xOptionsMenu(ptModifier):
             gLiveMovie.playPaused()
         elif id == kTrailerFadeInID:
             PtDebugPrint("xLiveTrailer - roll the movie",level=kDebugDumpLevel)
-            if type(gLiveMovie) != type(None):
+            if gLiveMovie is not None:
                 gLiveMovie.resume()
             #gLiveMovie.play()
         elif id == kTrailerFadeOutID:
@@ -1540,13 +1553,14 @@ class xOptionsMenu(ptModifier):
 
     def _AspectRatio(self, w, h):
         """Returns the appropriate aspect ratio for the given resolution"""
-        ratios = ((5, 4), (4, 3), (3, 2), (16, 10), (5, 3), (16, 9), (16, 9.375),)
-        w = float(w) # comes in as string, want float (not int) for division
-        h = float(h)
-        for r in ratios:
-            # resolution is within 1 pixel wiggle room in any direction from the exact aspect ratio (needed to recognize 1280x854 as 3:2)
-            if (w+1)/(h-1) >= float(r[0])/float(r[1]) >= (w-1)/(h+1):
-                return " [%i:%i]" % (r[0], r[1])
+        # Compares between a range of acceptable aspect ratios due to liberal decisions and marketing
+        # done by both GPU vendors and marketing departments. CWalther reported initially that 1280x854
+        # is not mathematically 3/2. Ultrawide monitors being marketed as "21:9" despite their being
+        # 2.35∶1 in some cases (or some other unknown ratio) makes this even more annoying...
+        aspect = float(w) / float(h)
+        for ratio, lower, upper in _ratios:
+            if upper >= aspect>= lower:
+                return " [{}]".format(ratio)
         return ""
     
     def GetVidResField(self):
@@ -1728,38 +1742,32 @@ class xOptionsMenu(ptModifier):
         kModuleName = "Personal"
         kChronicleVarType = 0
         vault = ptVault()
-        if type(vault) != type(None):
-            entry = vault.findChronicleEntry(chronicleVar)
-            if type(entry) == type(None):
-                # not found... add current level chronicle
-                vault.addChronicleEntry(chronicleVar,kChronicleVarType,str(value))
-                print "%s:\tentered new chronicle counter %s" % (kModuleName,chronicleVar)
-            else:
-                entry.chronicleSetValue(str(value))
-                entry.save()
-                print "%s:\tyour current value for %s is %s" % (kModuleName,chronicleVar,entry.chronicleGetValue())
+        entry = vault.findChronicleEntry(chronicleVar)
+        if entry is None:
+            # not found... add current level chronicle
+            vault.addChronicleEntry(chronicleVar,kChronicleVarType,str(value))
+            print "%s:\tentered new chronicle counter %s" % (kModuleName,chronicleVar)
         else:
-            PtDebugPrint("%s:\tERROR trying to access vault -- can't update %s variable in chronicle." % (kModuleName,chronicleVar))
+            entry.chronicleSetValue(str(value))
+            entry.save()
+            print "%s:\tyour current value for %s is %s" % (kModuleName,chronicleVar,entry.chronicleGetValue())
 
     def getChronicleVar(self, chronicleVar):
         kModuleName = "Personal"
         kChronicleVarType = 0
         vault = ptVault()
-        if type(vault) != type(None):
-            entry = vault.findChronicleEntry(chronicleVar)
-            print "getChronicleVar.chronicleVar: " + chronicleVar
-            #print "getChronicleVar.Entry: " , entry
-            if type(entry) == type(None):
-                # not found... add current level chronicle
-                #vault.addChronicleEntry(chronicleVar,kChronicleVarType,"%d" %(0))
-                #PtDebugPrint("%s:\tentered new chronicle counter %s" % (kModuleName,chronicleVar))
-                return None
-            else:
-                value = entry.chronicleGetValue()
-                print "getChronicleVar(): " + chronicleVar + " = " + value
-                return value
+        entry = vault.findChronicleEntry(chronicleVar)
+        print "getChronicleVar.chronicleVar: " + chronicleVar
+        #print "getChronicleVar.Entry: " , entry
+        if entry is None:
+            # not found... add current level chronicle
+            #vault.addChronicleEntry(chronicleVar,kChronicleVarType,"%d" %(0))
+            #PtDebugPrint("%s:\tentered new chronicle counter %s" % (kModuleName,chronicleVar))
+            return None
         else:
-            PtDebugPrint("%s:\tERROR trying to access vault -- can't retrieve %s variable in chronicle." % (kModuleName,kChronicleVarName))
+            value = entry.chronicleGetValue()
+            print "getChronicleVar(): " + chronicleVar + " = " + value
+            return value
         
     def IRefreshHelpSettings(self):
         clickToTurn = ptGUIControlRadioGroup(NavigationDlg.dialog.getControlFromTag(kNormNoviceRGID))
@@ -1866,7 +1874,7 @@ class xOptionsMenu(ptModifier):
         counter = 0
         # set the key binds back to the saved
         for control_code in defaultControlCodeBindsOrdered:
-            if type(control_code) == type(""):
+            if isinstance(control_code, str):
                 key1 = KeyMapArray[counter]
                 print "Binding " + key1 + " to " + control_code
                 km.bindKeyToConsoleCommand(key1,control_code)
@@ -1893,9 +1901,9 @@ class xOptionsMenu(ptModifier):
             field.setSpecialCaptureKeyMode(1)
             # set the mapping
             controlCode,spFlag,mpFlag = mapRow1[cID]
-            if type(controlCode) != type(None) and ( ( spFlag and PtIsSinglePlayerMode() ) or ( mpFlag and not PtIsSinglePlayerMode() ) ):
+            if controlCode is not None and ( ( spFlag and PtIsSinglePlayerMode() ) or ( mpFlag and not PtIsSinglePlayerMode() ) ):
                 # is the control code a console command?
-                if type(controlCode) == type(""):
+                if isinstance(controlCode, str):
                     field.setLastKeyCapture(km.getBindingKeyConsole(controlCode),km.getBindingFlagsConsole(controlCode))
                 # else must be a event binding
                 else:
@@ -1911,9 +1919,9 @@ class xOptionsMenu(ptModifier):
             field.setSpecialCaptureKeyMode(1)
             # set the mapping
             controlCode,spFlag,mpFlag = mapRow2[cID]
-            if type(controlCode) != type(None) and ( ( spFlag and PtIsSinglePlayerMode() ) or ( mpFlag and not PtIsSinglePlayerMode() ) ):
+            if controlCode is not None and ( ( spFlag and PtIsSinglePlayerMode() ) or ( mpFlag and not PtIsSinglePlayerMode() ) ):
                 # is the control code a console command?
-                if type(controlCode) == type(""):
+                if isinstance(controlCode, str):
                     # this shouldn't really happen!
                     field.setLastKeyCapture(km.getBindingKeyConsole(controlCode),km.getBindingFlagsConsole(controlCode))
                 # else must be a event binding
@@ -1928,7 +1936,7 @@ class xOptionsMenu(ptModifier):
         KeyMapString = ""
         # set the key binds back to the defaults
         for control_code in defaultControlCodeBindsOrdered:
-            if type(control_code) == type(""):
+            if isinstance(control_code, str):
                 key1 = defaultControlCodeBinds[control_code][0]
                 km.bindKeyToConsoleCommand(key1,control_code)
                 KeyMapString += key1 + " "

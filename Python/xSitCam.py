@@ -40,27 +40,28 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
       Mead, WA   99021
 
  *==LICENSE==* """
-"""
-Module: xVisitorUtils.py
-Date: May 2006
-Written by: Tye Hooley
-Provides support for Free players
-"""
 
 from Plasma import *
+from PlasmaTypes import *
 
-kValidVisitorAges = ("GarrisonNoShare", "Personal", "Nexus", "Neighborhood", "Cleft")
-kVisitorNagDialog  = "GUIDialog13"
+sitAct = ptAttribActivator(1, "SitBeh: Sitting Behavior Node")
+sitCam = ptAttribSceneobject(2, "SitCam: Sitting Canera")
 
-def IsVisitorAllowedAge(ageName):
-    "Returns if the age is available to visitors (i.e. free players)"
-    
-    #print( "IsVisitorAllowedAge-->Checking Age: %s" % ageName)
-    if PtIsSubscriptionActive():
-        return 1
-    else:
-        if ageName in kValidVisitorAges:
-            return 1
-        else:
-            return 0
-    
+class xSitCam(ptResponder):
+    def __init__(self):
+        ptResponder.__init__(self)
+
+        self.id = 20501
+        self.version = 1
+        PtDebugPrint("xSitCam.__init__ v.%i" % self.version, level=kWarningLevel)
+
+    def OnNotify(self, state, id, events):
+        if id == sitAct.id and PtWasLocallyNotified(self.key):
+            PtDebugPrint("xSitCam.OnNotify(): The SitBeh was notified!", level=kDebugDumpLevel)
+            camKey = sitCam.sceneobject.getKey()
+            if state:
+                PtDebugPrint("xSitCam.OnNotify(): Avatar sitting, pushing camera '%s'" % camKey.getName(), level=kWarningLevel)
+                ptCamera().save(camKey)
+            else:
+                PtDebugPrint("xSitCam.OnNotify(): Avatar standing, popping camera '%s'" % camKey.getName(), level=kWarningLevel)
+                ptCamera().restore(camKey)

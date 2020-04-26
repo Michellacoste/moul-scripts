@@ -62,8 +62,6 @@ from Plasma import *
 from PlasmaTypes import *
 from PlasmaKITypes import *
 
-import codecs
-
 import xJournalBookDefs
 
 
@@ -103,7 +101,7 @@ class xJournalBookGUIPopup(ptModifier):
         if id == actClickableBook.id:
             if PtWasLocallyNotified(self.key) and state:
                 PtToggleAvatarClickability(false)
-                if type(SeekBehavior.value) != type(None): #remember, smart seek before GUI is optional. 
+                if SeekBehavior.value is not None: #remember, smart seek before GUI is optional. 
                     PtDebugPrint("xJournalBookGUIPopup: Smart seek used",level=kDebugDumpLevel)
                     LocalAvatar = PtFindAvatar(events)
                     SeekBehavior.run(LocalAvatar)
@@ -148,7 +146,7 @@ class xJournalBookGUIPopup(ptModifier):
         self.JournalBook = None
 
         # This lookup should be removed once all PFMs are converted to specify their details
-        if JournalName.value != "":
+        if JournalName.value:
             PtDebugPrint("xJournalBookGUIPopup: deprecated journal format, using name '%s'" % (JournalName.value), level=kErrorLevel)
             try:
                 params = xJournalBookDefs.xJournalBooks[JournalName.value]
@@ -189,8 +187,8 @@ class xJournalBookGUIPopup(ptModifier):
         else:
             journalContents = PtGetLocalizedString(LocPath.value)
 
-        if journalContents == U"":
-            PtDebugPrint(U"WARNING - EMPTY JOURNAL: JournalName.value = '{}' LocPath = '{}'".format(codecs.decode(JournalName.value, 'utf-8'), codecs.decode(LocPath.value, 'utf-8')), level=kDebugDumpLevel)
+        if not journalContents:
+            PtDebugPrint("WARNING - EMPTY JOURNAL: JournalName.value = '%s' LocPath = '%s'" % (JournalName.value, LocPath.value), level=kDebugDumpLevel)
 
         # hide the KI
         PtSendKIMessage(kDisableKIandBB, 0)
