@@ -75,7 +75,7 @@ class islmPodMap(ptResponder):
         ptResponder.__init__(self)
         self.id = 221
         self.version = 1
-        print "islmPodMap: init  version = %d" % self.version
+        PtDebugPrint("islmPodMap: init  version = %d" % self.version)
 
     ###########################
     def IGetAgeFilename(self):
@@ -107,7 +107,7 @@ class islmPodMap(ptResponder):
     def OnGUINotify(self,id,control,event):
         "Notifications from the vignette"
         global gToggle
-        #print "GUI Notify id=%d, event=%d control=" % (id,event),control
+        #PtDebugPrint("GUI Notify id=%d, event=%d control=" % (id,event),control)
         if event == kAction:
             if control.getTagID() == kExit: #off
                 self.IQuitDialog()
@@ -136,9 +136,9 @@ class islmPodMap(ptResponder):
             PtSendKIMessage(kDisableKIandBB,0)
             respZoom.run(self.key, state="out", netForce=0, netPropagate=0)
             PtShowDialog(Vignette.value)
-            print "dialog: %s goes up" % Vignette.value
+            PtDebugPrint("dialog: %s goes up" % Vignette.value)
         # get control key events
-        PtGetControlEvents(true,self.key)
+        PtGetControlEvents(True,self.key)
 
     ###########################
     def IQuitDialog(self):
@@ -148,10 +148,10 @@ class islmPodMap(ptResponder):
         if Vignette.value:
             PtSendKIMessage(kEnableKIandBB,0)
             PtHideDialog(Vignette.value)
-            print "Dialog: %s goes down" % Vignette.value
+            PtDebugPrint("Dialog: %s goes down" % Vignette.value)
         else:
-            print "WTH!!!"
+            PtDebugPrint("WTH!!!")
         #disable the Control key events
-        PtGetControlEvents(false,self.key)
+        PtGetControlEvents(False,self.key)
 
 

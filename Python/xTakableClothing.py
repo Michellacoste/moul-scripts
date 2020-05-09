@@ -106,8 +106,8 @@ class xTakableClothing(ptModifier):
         global baseFClothing
         global baseMClothing
         AgeStartedIn = PtGetAgeName()
-        self.useChance = true
-        self.shown = false
+        self.useChance = True
+        self.shown = False
         if not stringVarName.value:
             PtDebugPrint("ERROR: xTakableClothing.OnFirstUpdate():\tERROR: missing SDL var name on %s" % self.sceneobject.getName())
         if not stringFClothingName.value:
@@ -116,7 +116,7 @@ class xTakableClothing(ptModifier):
             PtDebugPrint("ERROR: xTakableClothing.OnFirstUpdate():\tERROR: missing male clothing name on %s" % self.sceneobject.getName())
         if not stringChanceSDLName.value:
             PtDebugPrint("DEBUG: xTakableClothing.OnFirstUpdate(): Chance SDL var name is empty, so we will not use chance rolls for showing %s" % self.sceneobject.getName())
-            self.useChance = false
+            self.useChance = False
         allFClothing = stringFClothingName.value.split(";")
         for i in range(len(allFClothing)):
             allFClothing[i] = allFClothing[i].strip()
@@ -141,7 +141,7 @@ class xTakableClothing(ptModifier):
                     ageSDL.setNotify(self.key,stringVarName.value,0.0)
                     if not (ageSDL[stringVarName.value][0] ^ boolShowOnTrue.value):
                         PtAtTimeCallback(self.key, 1, kEnableClothingTimer) # we will handle the clickables in a second, since handling them now doesn't work
-                        self.shown = true
+                        self.shown = True
                     else:
                         PtAtTimeCallback(self.key, 1, kDisableClothingTimer)
                 except:
@@ -160,7 +160,7 @@ class xTakableClothing(ptModifier):
                     PtAtTimeCallback(self.key, 1.5, kRollDiceTimer) # make sure this fires after our initial hide/show code runs
                 except:
                     PtDebugPrint("ERROR: xTakableClothing.OnServerInitComplete():\tERROR missing SDL var %s so we will not use chance rolls on %s" % (stringChanceSDLName.value,self.sceneobject.getName()))
-                    self.useChance = false
+                    self.useChance = False
                     self.chanceAppearing = 0
             else:
                 self.chanceAppearing = 0
@@ -280,19 +280,19 @@ class xTakableClothing(ptModifier):
     
     def IRemoveOtherGuildShirt (self):
         playerCNode = ptVault().getAvatarClosetFolder()
-        print "xTakableClothing: getAvatarClosetFolder Type = " + str(playerCNode.getType())
-        print "xTakableClothing: getAvatarClosetFolder Child Node Count = " + str(playerCNode.getChildNodeCount())
+        PtDebugPrint("xTakableClothing: getAvatarClosetFolder Type = " + str(playerCNode.getType()))
+        PtDebugPrint("xTakableClothing: getAvatarClosetFolder Child Node Count = " + str(playerCNode.getChildNodeCount()))
         if playerCNode.getChildNodeCount() > 0:
             playerCNodeList = playerCNode.getChildNodeRefList()
             for folderChild in playerCNodeList:
                 PtDebugPrint("xTakableClothing: looking at child node " + str(folderChild),level=kDebugDumpLevel)
                 childNode = folderChild.getChild()
                 if childNode != type(None):
-                    print "xTakableClothing: Child Node Node ID"
+                    PtDebugPrint("xTakableClothing: Child Node Node ID")
                     SDLNode = childNode.upcastToSDLNode()
                     if SDLNode is not None:
                         rec = SDLNode.getStateDataRecord()
-                        print "xTakableClothing: getStateDataRecord().getName(): " + str(rec.getName())
+                        PtDebugPrint("xTakableClothing: getStateDataRecord().getName(): " + str(rec.getName()))
                         SDLVarList = rec.getVarList()
                         for var in SDLVarList:
                             varnode = rec.findVar(var)
@@ -300,13 +300,13 @@ class xTakableClothing(ptModifier):
                                 if varnode.getType() == 4:
                                     varKey = varnode.getKey()
                                     varName = varKey.getName()
-                                    print "xTakableClothing: VarNode.getName(): ", varName
+                                    PtDebugPrint("xTakableClothing: VarNode.getName(): ", varName)
                                     if varName.find('Torso_GuildBlue') != -1 or varName.find('Torso_GuildGreen') != -1 or varName.find('Torso_GuildRed') != -1 or varName.find('Torso_GuildYellow') != -1 or varName.find('Torso_GuildWhite') !=  -1:
-                                        print "xTakableClothing: Found Other Guild Shirt. Deleting Old Guild Shirt."
+                                        PtDebugPrint("xTakableClothing: Found Other Guild Shirt. Deleting Old Guild Shirt.")
                                         if playerCNode.removeNode(childNode):
-                                            print "xTakableClothing: Delete was a success."
+                                            PtDebugPrint("xTakableClothing: Delete was a success.")
                                         else:
-                                            print "xTakableClothing: Delete failed."
+                                            PtDebugPrint("xTakableClothing: Delete failed.")
                                         return
 
     def IRemoveWornSet(self,setName):
@@ -366,7 +366,7 @@ class xTakableClothing(ptModifier):
                     self.IRemoveOtherGuildShirt()
                     psnlSDL = xPsnlVaultSDL()
                     psnlSDL["guildAlliance"] = (guildSDLValues[base],)
-                    print "xTakableClothing: Guild set to:", guildSDLValues[base]
+                    PtDebugPrint("xTakableClothing: Guild set to:", guildSDLValues[base])
                 avatar.avatar.addWardrobeClothingItem(base,ptColor().white(),ptColor().white())
                 acclist = avatar.avatar.getClosetClothingList(kAccessoryClothingItem)
                 accnamelist = []

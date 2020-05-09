@@ -437,23 +437,23 @@ def DateInRange(date,range):
     #dateStr = "%d/%d/%d" % (dateMonth,dateDay,dateYear)
     #rangeStr = "%d-%d/%d-%d/%d-%d" % (rangeMonthMin,rangeMonthMax,rangeDayMin,rangeDayMax,rangeYearMin,rangeYearMax)
     #PtDebugPrint("DateInRange(): Checking to see if the date " + dateStr + " is in the date range " + rangeStr)
-    inRange = true
+    inRange = True
     if not (rangeYearMin == 0 or rangeYearMax == 0): # year of 0 means any year
         if (dateYear < rangeYearMin) or (dateYear > rangeYearMax):
-            inRange = false
+            inRange = False
     if not (rangeMonthMin == 0 or rangeMonthMax == 0): # month of 0 means any month
         if (dateMonth < rangeMonthMin) or (dateMonth > rangeMonthMax):
-            inRange = false
+            inRange = False
     if not (rangeDayMin == 0 or rangeDayMax == 0): # year of 0 means any year
         if (dateDay < rangeDayMin) or (dateDay > rangeDayMax):
-            inRange = false
+            inRange = False
     return inRange
 
 def CanShowSeasonal(clothingItem):
     "returns true if the item can be shown, this checks seasonal only"
     if clothingItem.seasonal:
         if ItemInWardrobe(clothingItem):
-            return true # it's in our closet, so we can show this
+            return True # it's in our closet, so we can show this
         showTime = clothingItem.seasonTime
         if PtIsInternalRelease():
             curTime = time.localtime(time.time()) # use the client's clock if we're an internal build
@@ -462,9 +462,9 @@ def CanShowSeasonal(clothingItem):
         #PtDebugPrint("CanShowSeasonal(): Checking if we can show " + clothingItem.name)
         for timeRange in showTime: # there may be multiple times listed
             if DateInRange(curTime,timeRange):
-                return true
-        return false
-    return true # as far as we know, the item can be shown
+                return True
+        return False
+    return True # as far as we know, the item can be shown
 
 def CanShowClothingItem(clothingItem):
     "returns true if this item is elegable for showing"
@@ -474,7 +474,7 @@ def CanShowClothingItem(clothingItem):
         if (clothingItem.nonStandardItem and ItemInWardrobe(clothingItem)) or not clothingItem.nonStandardItem:
             if (PtIsSinglePlayerMode() and clothingItem.singlePlayer) or not PtIsSinglePlayerMode():
                 if CanShowSeasonal(clothingItem):
-                    return true
+                    return True
                 else:
                     PtDebugPrint("CanShowClothingItem(): Hiding item "+clothingItem.name+" because it is seasonal")
             else:
@@ -483,7 +483,7 @@ def CanShowClothingItem(clothingItem):
             PtDebugPrint("CanShowClothingItem(): Hiding item "+clothingItem.name+" because it is optional and isn't in your closet")
     else:
         PtDebugPrint("CanShowClothingItem(): Hiding item "+clothingItem.name+" because it is an internal-only option")
-    return false
+    return False
 
 def ItemInWardrobe(clothingItem):
     avatar = PtGetLocalAvatar()
@@ -861,7 +861,7 @@ class xAvatarCustomization(ptModifier):
                             # enable the zoom button
                             zoomBtn.show()
                             # zoom in on face automatically
-                            zoomBtn.setChecked(true)
+                            zoomBtn.setChecked(True)
                             ZoomCamera.sceneobject.pushCutsceneCamera(1,PtGetLocalAvatar().getKey())
                             panelRG.hide()
                             self.SetupCamera()
@@ -1013,7 +1013,7 @@ class xAvatarCustomization(ptModifier):
                             else:
                                 PtChangeAvatar("Female")
                     elif btnID == kAvatarCameraID:
-                        print "ACA: Taking a picture!"
+                        PtDebugPrint("ACA: Taking a picture!")
                         picCam = ptCamera()
                         picCam.setAspectRatio(1)
                         AvCustGUI.dialog.hide()
@@ -1049,10 +1049,10 @@ class xAvatarCustomization(ptModifier):
         avatar = PtGetLocalAvatar()
         currentgender = avatar.avatar.getAvatarClothingGroup()
         if currentgender == 1:
-            print "Female Screenshot"
+            PtDebugPrint("Female Screenshot")
             TestMap.textmap.drawImageClipped(0, 0, image, 55, 250, 512, 512, 0)
         else:
-            print "Male Screenshot"
+            PtDebugPrint("Male Screenshot")
             TestMap.textmap.drawImageClipped(0, 0, image, 55, 80, 512, 512, 0)
         TestMap.textmap.flush()
         PtAtTimeCallback(self.key, 0, 999)
@@ -1230,10 +1230,10 @@ class xAvatarCustomization(ptModifier):
                 clothingName = "02_MTorso09_01"
             clothingList = avatar.avatar.getWardrobeClothingList()
             if clothingName not in clothingList:
-                print "adding Yeesha reward clothing %s to wardrobe" % (clothingName)
+                PtDebugPrint("adding Yeesha reward clothing %s to wardrobe" % (clothingName))
                 avatar.avatar.addWardrobeClothingItem(clothingName,ptColor().white(),ptColor().black())
             else:
-                print "player already has Yeesha reward clothing, doing nothing"
+                PtDebugPrint("player already has Yeesha reward clothing, doing nothing")
             folder = vault.getChronicleFolder()
             if folder is not None:
                 folder.removeNode(entry)
@@ -1290,10 +1290,10 @@ class xAvatarCustomization(ptModifier):
             newImage = TestMap.textmap.getImage()
             basePath = PtGetUserPath() + U"\\Avatars\\"
             if not PtCreateDir(basePath):
-                print U"xAvatarCustomization::OnTimer(): Unable to create \"" + basePath + "\" directory. Avatar pic is NOT saved."
+                PtDebugPrint(U"xAvatarCustomization::OnTimer(): Unable to create \"" + basePath + "\" directory. Avatar pic is NOT saved.")
                 return
             filename = basePath + unicode(PtGetLocalPlayer().getPlayerID()) + U".jpg"
-            print U"xAvatarCustomization::OnTimer(): Saving avatar pic to \"" + filename + U"\""
+            PtDebugPrint(U"xAvatarCustomization::OnTimer(): Saving avatar pic to \"" + filename + U"\"")
             newImage.saveAsJPEG(filename, 90)
 
     def IUpdateAllControls(self):
@@ -1340,7 +1340,7 @@ class xAvatarCustomization(ptModifier):
         # get (or re-get) the closet
         TheCloset = ClothingCloset()
         # start from the top and go down Hair thru Feet (and Accessories)
-        for listboxID in TheCloset.keys():
+        for listboxID in TheCloset.viewkeys():
             # do the primary clothing listbox
             group = TheCloset[listboxID]
             # add the listbox class if we don't have it already
@@ -1372,7 +1372,7 @@ class xAvatarCustomization(ptModifier):
         "Gets whats being worn and sets the dialogs to show what we are wearing"
         # assumes that WornList is already filled out
         global listboxDict
-        for id in TheCloset.keys():
+        for id in TheCloset.viewkeys():
             # tell the listboxes to update themselves
             listboxDict[id].SetWhatWearing()
             listboxDict[id].UpdateScrollArrows()
@@ -2164,17 +2164,17 @@ class ClothingCloset:
         return len(self.clothingGroups)
 
     def keys(self):
-        return self.clothingGroups.keys()
+        return self.clothingGroups.viewkeys()
 
     def findGroup(self,clothing_type):
-        for group in self.clothingGroups.values():
+        for group in self.clothingGroups.viewvalues():
             if group.clothingType == clothing_type:
                 return group
         return None
 
     def findClothingItem(self,finditem):
         "find the clothing item in the closet, return group and index"
-        for group in self.clothingGroups.values():
+        for group in self.clothingGroups.viewvalues():
             # search through the normal clothing
             for idx in range(len(group)):
                 if group[idx].name == finditem.name:
@@ -2187,7 +2187,7 @@ class ClothingCloset:
     
     def getItemByName(self,itemName):
         "return the clothing item with the desired name"
-        for group in self.clothingGroups.values():
+        for group in self.clothingGroups.viewvalues():
             # search through the normal clothing
             for idx in range(len(group)):
                 if group[idx].name == itemName:

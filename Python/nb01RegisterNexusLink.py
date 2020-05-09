@@ -60,7 +60,7 @@ respOneshot = ptAttribResponder(2,"Rspndr: one shot")
 respKIGlow =  ptAttribResponder(3,"Rspndr: ki glow",netForce=1)
 
 # globals
-boolClickerIsMe = false
+boolClickerIsMe = False
 myID = 0
 hoodID = 0
 hoodMgr = None
@@ -73,7 +73,7 @@ class nb01RegisterNexusLink(ptModifier):
         self.id = 5020
         version = 1
         self.version = version
-        print "__init__nb01RegisterNexusLink v.", version
+        PtDebugPrint("__init__nb01RegisterNexusLink v.", version)
         
     def OnNotify(self,state,id,events):
         global boolClickerIsMe
@@ -92,7 +92,7 @@ class nb01RegisterNexusLink(ptModifier):
                 return
             respOneshot.run(self.key,events=events)
             if PtWasLocallyNotified(self.key):
-                boolClickerIsMe = true
+                boolClickerIsMe = True
                 objAvatar = PtFindAvatar(events)
                 myID = PtGetClientIDFromAvatarKey(objAvatar.getKey())
             return
@@ -107,10 +107,10 @@ class nb01RegisterNexusLink(ptModifier):
         if id == respOneshot.id and boolClickerIsMe:
             if not state:
                 return
-            boolClickerIsMe = false # done with this var, reset it
+            boolClickerIsMe = False # done with this var, reset it
             
             kiLevel = PtDetermineKILevel()
-            print "nb01RegisterNexusLink.OnNotify:\tplayer ki level is",kiLevel
+            PtDebugPrint("nb01RegisterNexusLink.OnNotify:\tplayer ki level is",kiLevel)
 
             # case 1:  player has no KI
             # ki slot doesn't respond, just return
